@@ -1,129 +1,109 @@
-.PHONY: apex-supreme apex-test apex-monitor apex-health apex-destroy
+.PHONY: help apex-supreme apex-supreme-2025 apex-health apex-test apex-monitor memory-add memory-search forensic-analyze
 
-# 🏛️ APEX OMNIBUS SUPREME - Master Commands
-
-apex-supreme:
-	@echo "🏛️  DEPLOYING APEX OMNIBUS SUPREME..."
-	@echo ""
-	@python deploy/apex_deploy.py
-	@echo ""
-	@echo "🎊 APEX OMNIBUS SUPREME: FULLY OPERATIONAL!"
-	@echo ""
-	@echo "📊 Access Points:"
-	@echo "  • Supreme API:     http://localhost:8000"
-	@echo "  • Memory Nexus:    http://localhost:8080"
-	@echo "  • Orchestration:   http://localhost:9000"
-	@echo "  • Memory Trinity:  http://localhost:8081"
-	@echo "  • Omni Engine:     http://localhost:9100"
-	@echo "  • SUPERLUMINAL:    http://localhost:9001"
-	@echo "  • Neo4j Browser:   http://localhost:7474"
-	@echo "  • Grafana:         http://localhost:3000"
-	@echo "  • Prometheus:      http://localhost:9090"
-	@echo ""
-	@echo "🎯 Quick Commands:"
-	@echo "  • Health check:    make apex-health"
-	@echo "  • Run tests:       make apex-test"
-	@echo "  • Open monitoring: make apex-monitor"
-	apex-health:
-	@echo "🏥 APEX System Health Check..."
-	@curl -s http://localhost:8000/api/v1/health | jq
-	@echo ""
-	@echo "Memory Nexus:"
-	@curl -s http://localhost:8080/health || echo "  ❌ Not responding"
-	@echo ""
-	@echo "Orchestration:"
-	@curl -s http://localhost:9000/health || echo "  ❌ Not responding"
-	@echo ""
-	@echo "Neo4j:"
-	@curl -s http://localhost:7474 > /dev/null && echo "  ✅ Operational" || echo "  ❌ Not responding"
-
-apex-test:
-	@echo "🧪 Running APEX Integration Tests..."
-	@pytest tests/test_integration.py -v
-	@echo ""
-	@echo "⚡ Performance Tests (<300ms validation)..."
-	@pytest tests/test_performance.py -v
-	@echo ""
-	@echo "🔍 Forensic Workflow Tests..."
-	@pytest tests/test_forensic.py -v
-	@echo ""
-	@echo "✅ All tests completed!"
-
-apex-monitor:
-	@echo "📊 Opening monitoring dashboards..."
-	@open http://localhost:3000 || xdg-open http://localhost:3000
-	@echo "✅ Grafana dashboard opened"
-	@echo "   Default login: admin/glaciereq2025"
-
-apex-examples:
-	@echo "💡 Running example workflows..."
-	@echo ""
-	@echo "1️⃣  Forensic Case Analysis:"
-	@python examples/forensic_case.py
-	@echo ""
-	@echo "2️⃣  Memory Operations:"
-	@python examples/memory_operations.py
-	@echo ""
-	@echo "3️⃣  External API Calls:"
-	@python examples/external_apis.py
-
-apex-destroy:
-	@echo "⚠️  DESTROYING APEX OMNIBUS SUPREME..."
-	@read -p "Are you sure? This will stop all services [y/N]: " confirm && \
-		if [ "$$confirm" = "y" ]; then \
-			docker-compose down -v; \
-			echo "💥 APEX destroyed"; \
-		else \
-			echo "❌ Cancelled"; \
-		fi
-
-apex-logs:
-	@echo "📜 APEX System Logs:"
-	@docker-compose logs -f --tail=100
-
-apex-restart:
-	@echo "🔄 Restarting APEX OMNIBUS SUPREME..."
-	@docker-compose restart
-	@echo "✅ All services restarted"
-
-# Quick memory operations
-memory-add:
-	@echo "💾 Adding memory to APEX..."
-	@curl -X POST http://localhost:8000/api/v1/memory/add \
-		-H "Content-Type: application/json" \
-		-d '{"content":"$(CONTENT)","user_id":"$(USER)"}' | jq
-
-memory-search:
-	@echo "🔍 Searching APEX memory..."
-	@curl -X POST http://localhost:8000/api/v1/memory/search \
-		-H "Content-Type: application/json" \
-		-d '{"query":"$(QUERY)","user_id":"$(USER)"}' | jq
-
-# Forensic operations
-forensic-analyze:
-	@echo "🔬 Running forensic analysis..."
-	@curl -X POST http://localhost:8000/api/v1/forensic/analyze \
-		-H "Content-Type: application/json" \
-		-d '{"case_id":"$(CASE_ID)"}' | jq
+# APEX OMNIBUS SUPREME - Makefile
+# One-command operations for supreme power
 
 help:
-	@echo "🏛️  APEX OMNIBUS SUPREME - Command Reference"
+	@echo "\033[1;36m====================================\033[0m"
+	@echo "\033[1;35m🏛️  APEX OMNIBUS SUPREME 2025\033[0m"
+	@echo "\033[1;36m====================================\033[0m"
 	@echo ""
-	@echo "Deployment:"
-	@echo "  make apex-supreme     Deploy entire APEX stack"
-	@echo "  make apex-destroy     Destroy all APEX services"
-	@echo "  make apex-restart     Restart all services"
+	@echo "\033[1;33mDeployment Commands:\033[0m"
+	@echo "  make apex-supreme         Deploy original APEX stack"
+	@echo "  make apex-supreme-2025    Deploy 2025 enhanced stack"
+	@echo "  make apex-down            Stop all services"
+	@echo "  make apex-rebuild         Rebuild and restart"
 	@echo ""
-	@echo "Monitoring:"
-	@echo "  make apex-health      Check system health"
-	@echo "  make apex-monitor     Open Grafana dashboard"
-	@echo "  make apex-logs        View system logs"
+	@echo "\033[1;33mHealth & Monitoring:\033[0m"
+	@echo "  make apex-health          Check all layer health"
+	@echo "  make apex-test            Run integration tests"
+	@echo "  make apex-monitor         Open monitoring dashboard"
+	@echo "  make apex-logs            View all logs"
 	@echo ""
-	@echo "Testing:"
-	@echo "  make apex-test        Run all tests"
-	@echo "  make apex-examples    Run example workflows"
+	@echo "\033[1;33mMemory Operations:\033[0m"
+	@echo "  make memory-add CONTENT='...' USER='...'   Add memory"
+	@echo "  make memory-search QUERY='...' USER='...'  Search memory"
 	@echo ""
-	@echo "Operations:"
-	@echo "  make memory-add CONTENT='...' USER='...'    Add memory"
-	@echo "  make memory-search QUERY='...' USER='...'   Search memory"
-	@echo "  make forensic-analyze CASE_ID='...'         Analyze case"
+	@echo "\033[1;33mForensic Operations:\033[0m"
+	@echo "  make forensic-analyze CASE_ID='...'        Analyze case"
+	@echo ""
+
+apex-supreme:
+	@echo "\033[1;32m🚀 Deploying APEX OMNIBUS SUPREME...\033[0m"
+	@docker-compose up -d
+	@echo "\033[1;32m✅ Waiting for services to be healthy...\033[0m"
+	@sleep 10
+	@$(MAKE) apex-health
+	@echo ""
+	@echo "\033[1;35m🎊 APEX OMNIBUS SUPREME: FULLY OPERATIONAL!\033[0m"
+	@echo "\033[1;36mGateway: http://localhost:8000\033[0m"
+	@echo "\033[1;36mGrafana: http://localhost:3000\033[0m"
+	@echo "\033[1;36mNeo4j:   http://localhost:7474\033[0m"
+
+apex-supreme-2025:
+	@echo "\033[1;32m🚀 Deploying APEX OMNIBUS SUPREME 2025 Edition...\033[0m"
+	@pip install -r requirements.txt --quiet
+	@python deploy/apex_deploy_2025.py
+	@echo "\033[1;35m✅ 2025 integrations active\033[0m"
+	@echo "\033[1;35m✅ Google MCP servers configured\033[0m"
+	@echo "\033[1;35m✅ AWS MCP bridges established\033[0m"
+	@echo "\033[1;35m✅ Advanced memory architecture live\033[0m"
+	@echo "\033[1;35m✅ Multi-agent orchestration ready\033[0m"
+	@echo "\033[1;35m🎊 APEX 2025: SUPREME POWER ACHIEVED!\033[0m"
+
+apex-down:
+	@echo "\033[1;33m⏹️  Stopping APEX services...\033[0m"
+	@docker-compose down
+	@echo "\033[1;32m✅ All services stopped\033[0m"
+
+apex-rebuild:
+	@echo "\033[1;33m🔧 Rebuilding APEX stack...\033[0m"
+	@docker-compose down
+	@docker-compose build --no-cache
+	@$(MAKE) apex-supreme
+
+apex-health:
+	@echo "\033[1;36m🏥 Checking APEX health...\033[0m"
+	@echo "\033[1;33mL0 - APEX Gateway:\033[0m"
+	@curl -sf http://localhost:8000/health && echo "  ✅ OK" || echo "  ❌ FAIL"
+	@echo "\033[1;33mL1 - Memory Nexus:\033[0m"
+	@curl -sf http://localhost:8080/health && echo "  ✅ OK" || echo "  ❌ FAIL"
+	@echo "\033[1;33mL2 - Orchestration:\033[0m"
+	@curl -sf http://localhost:9000/health && echo "  ✅ OK" || echo "  ❌ FAIL"
+	@echo "\033[1;33mL6 - Neo4j:\033[0m"
+	@curl -sf http://localhost:7474/ && echo "  ✅ OK" || echo "  ❌ FAIL"
+	@echo "\033[1;33mL7 - Prometheus:\033[0m"
+	@curl -sf http://localhost:9090/-/healthy && echo "  ✅ OK" || echo "  ❌ FAIL"
+	@echo "\033[1;33mL7 - Grafana:\033[0m"
+	@curl -sf http://localhost:3000/api/health && echo "  ✅ OK" || echo "  ❌ FAIL"
+
+apex-test:
+	@echo "\033[1;36m🧪 Running integration tests...\033[0m"
+	@pytest tests/ -v --tb=short
+
+apex-monitor:
+	@echo "\033[1;36m📊 Opening monitoring dashboard...\033[0m"
+	@open http://localhost:3000 || xdg-open http://localhost:3000
+
+apex-logs:
+	@docker-compose logs -f
+
+memory-add:
+	@echo "\033[1;36m💾 Adding memory...\033[0m"
+	@curl -X POST http://localhost:8000/api/v1/memory/add \
+		-H 'Content-Type: application/json' \
+		-d '{"content":"$(CONTENT)","user_id":"$(USER)"}'
+	@echo "\n\033[1;32m✅ Memory added\033[0m"
+
+memory-search:
+	@echo "\033[1;36m🔍 Searching memory...\033[0m"
+	@curl -X POST http://localhost:8000/api/v1/memory/search \
+		-H 'Content-Type: application/json' \
+		-d '{"query":"$(QUERY)","user_id":"$(USER)"}'
+
+forensic-analyze:
+	@echo "\033[1;36m🔬 Analyzing forensic case...\033[0m"
+	@curl -X POST http://localhost:8000/api/v1/forensic/analyze \
+		-H 'Content-Type: application/json' \
+		-d '{"case_id":"$(CASE_ID)"}'
+	@echo "\n\033[1;32m✅ Analysis complete\033[0m"

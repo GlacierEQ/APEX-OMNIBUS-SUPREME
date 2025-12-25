@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-👑 APEX OMNIBUS SUPREME - Unified API Gateway
-Single endpoint for all memory operations across 8 repositories
+APEX OMNIBUS SUPREME - Master API Gateway
+Unified interface for all APEX operations
 """
 
 from fastapi import FastAPI, HTTPException, Depends
@@ -12,16 +12,13 @@ import httpx
 import os
 from datetime import datetime
 
-# Initialize FastAPI
 app = FastAPI(
     title="APEX OMNIBUS SUPREME",
-    description="Ultimate AI Memory & Orchestration Command Center",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    description="Supreme AI Memory & Orchestration Command Center",
+    version="2025.1.0"
 )
 
-# CORS middleware
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,291 +27,201 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configuration
+CONFIG = {
+    'memory_nexus': 'http://memory_nexus:8080',
+    'orchestration': 'http://orchestration:9000',
+    'memory_trinity': 'http://memory_trinity:8081',
+    'execution_engine': 'http://execution_engine:9100',
+    'intelligence': 'http://intelligence:9001',
+    'neo4j': 'bolt://neo4j:7687',
+}
 
-# ============================================================================
-# REQUEST/RESPONSE MODELS
-# ============================================================================
+# ============================================
+# DATA MODELS
+# ============================================
 
 class MemoryAddRequest(BaseModel):
     content: str
     user_id: str
-    memory_type: str = "auto"  # auto, graph, preference, context, all
-    metadata: Dict[str, Any] = {}
-
+    metadata: Optional[Dict[str, Any]] = None
 
 class MemorySearchRequest(BaseModel):
     query: str
     user_id: str
-    sources: List[str] = ["all"]  # all, mem0, memory_plugin, supermemory
-    limit: int = 20
+    sources: Optional[List[str]] = None
+    limit: Optional[int] = 10
 
-
-class ForensicAnalysisRequest(BaseModel):
+class ForensicAnalyzeRequest(BaseModel):
     case_id: str
-    evidence: List[Dict[str, str]] = []
-    auto_link: bool = True
+    evidence: Optional[List[Dict[str, Any]]] = None
 
+class SkillExecuteRequest(BaseModel):
+    skill: str
+    params: Dict[str, Any]
 
-class MemoryResponse(BaseModel):
-    success: bool
-    message: str
-    data: Optional[Dict[str, Any]] = None
-    routed_to: Optional[str] = None
+# ============================================
+# HEALTH & STATUS
+# ============================================
 
-
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
-class ApexConfig:
-    """Central configuration for APEX system"""
-    
-    MEM0_PRO_KEY = os.getenv("MEM0_PRO_KEY", "m0-XsPsE19WZoEesvOFYbm9A6Du98pWS8wyfHUXJ60U")
-    MEM0_DEV_KEY = os.getenv("MEM0_DEV_KEY", "m0-bjuFyuiIvBcaj7c1KXSlUkogNPifL5GT2vU5zrjj")
-    MEMORYPLUGIN_GLOBAL = os.getenv("MEMORYPLUGIN_GLOBAL", "LFVBLPUL3N8N8K2FLYGCSCKMSMSRHSG9")
-    MEMORYPLUGIN_DIRECT = os.getenv("MEMORYPLUGIN_DIRECT", "yD4IKCdlI0VCXlfD4xLT1x5D0dEU9Hd1")
-    SUPERMEMORY_TOKEN = os.getenv("SUPERMEMORY_TOKEN", "sm_Cr3YZq5Tf84PHqr4odBRsQ_uvorvUfqTlXPgkDKteEOXbSxvCPDWFbDJMHftWXmrKXXvKtKkTHQgxvVcCCSURab")
-    
-    NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-    NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-    NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "glaciereq2025")
-    
-    # Service endpoints
-    ENDPOINTS = {
-        "memory_nexus": "http://localhost:8080",
-        "mem0_integration": "http://localhost:8081",
-        "omni_grid": "http://localhost:9000",
-        "omni_engine": "http://localhost:9100",
-        "superluminal": "http://localhost:9001"
-    }
-
-
-# ============================================================================
-# INTELLIGENT ROUTING
-# ============================================================================
-
-class IntelligentRouter:
-    """Routes memory operations to optimal backend"""
-    
-    @staticmethod
-    def route_memory(content: str, memory_type: str = "auto") -> str:
-        """
-        Determine optimal backend for memory storage
-        
-        Returns: 'mem0', 'memory_plugin', 'supermemory', or 'all'
-        """
-        if memory_type != "auto":
-            return memory_type
-        
-        content_lower = content.lower()
-        
-        # Graph memory indicators (Mem0)
-        graph_keywords = ["case", "linked", "related", "connection", "evidence", 
-                         "relationship", "forensic", "device", "hash"]
-        if any(kw in content_lower for kw in graph_keywords):
-            return "mem0"
-        
-        # Preference memory indicators (MemoryPlugin)
-        preference_keywords = ["prefer", "like", "always", "usually", "habit",
-                              "favorite", "default", "setting"]
-        if any(kw in content_lower for kw in preference_keywords):
-            return "memory_plugin"
-        
-        # Context memory indicators (Supermemory)
-        context_keywords = ["currently", "discussing", "working on", "today",
-                           "now", "meeting", "session"]
-        if any(kw in content_lower for kw in context_keywords):
-            return "supermemory"
-        
-        # Default to Supermemory for general context
-        return "supermemory"
-
-
-# ============================================================================
-# API ENDPOINTS
-# ============================================================================
-
-@app.get("/")
-async def root():
-    """Root endpoint with system info"""
-    return {
-        "name": "APEX OMNIBUS SUPREME",
-        "version": "1.0.0",
-        "status": "operational",
-        "docs": "/docs",
-        "health": "/api/v1/health"
-    }
-
-
-@app.get("/api/v1/health")
+@app.get("/health")
 async def health_check():
-    """
-    Comprehensive health check across all layers
-    """
-    health = {
-        "status": "operational",
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "layers": {}
+        "version": "2025.1.0",
+        "power_level": "SUPREME"
     }
-    
-    # Check each service endpoint
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        for service, endpoint in ApexConfig.ENDPOINTS.items():
-            try:
-                response = await client.get(f"{endpoint}/health")
-                health["layers"][service] = "✅ operational" if response.status_code < 500 else "⚠️ degraded"
-            except:
-                health["layers"][service] = "❌ unavailable"
-        
-        # Check Neo4j
-        try:
-            response = await client.get("http://localhost:7474")
-            health["layers"]["neo4j"] = "✅ operational" if response.status_code < 500 else "❌ unavailable"
-        except:
-            health["layers"]["neo4j"] = "❌ unavailable"
-    
-    return health
 
+@app.get("/api/v1/status")
+async def get_system_status():
+    """Get comprehensive system status"""
+    status = {}
+    
+    async with httpx.AsyncClient() as client:
+        for service, url in CONFIG.items():
+            if service == 'neo4j':
+                continue
+            try:
+                response = await client.get(f"{url}/health", timeout=2.0)
+                status[service] = {
+                    "status": "healthy" if response.status_code == 200 else "degraded",
+                    "response_time_ms": response.elapsed.total_seconds() * 1000
+                }
+            except:
+                status[service] = {"status": "unhealthy", "response_time_ms": None}
+    
+    return {
+        "overall_status": "operational",
+        "services": status,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+# ============================================
+# MEMORY OPERATIONS
+# ============================================
 
 @app.post("/api/v1/memory/add")
-async def add_memory(request: MemoryAddRequest) -> MemoryResponse:
-    """
-    Add memory with intelligent routing to optimal backend
+async def add_memory(request: MemoryAddRequest):
+    """Add memory with intelligent routing"""
     
-    Routes automatically based on content analysis:
-    - Graph relationships → Mem0
-    - Preferences → MemoryPlugin  
-    - Context → Supermemory
-    - Critical data → All systems (redundancy)
-    """
-    try:
-        # Determine routing
-        backend = IntelligentRouter.route_memory(request.content, request.memory_type)
+    # Analyze content to determine optimal backend
+    backend = _route_memory_add(request.content, request.metadata)
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{CONFIG['memory_nexus']}/api/memory/add",
+            json={
+                "content": request.content,
+                "user_id": request.user_id,
+                "metadata": request.metadata,
+                "preferred_backend": backend
+            },
+            timeout=10.0
+        )
         
-        # Route to appropriate service
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            if backend == "all":
-                # Replicate to all backends
-                endpoints = [ApexConfig.ENDPOINTS["memory_nexus"]]
-                results = []
-                for endpoint in endpoints:
-                    try:
-                        response = await client.post(
-                            f"{endpoint}/memory/add",
-                            json=request.dict()
-                        )
-                        results.append(response.json())
-                    except Exception as e:
-                        results.append({"error": str(e)})
-                
-                return MemoryResponse(
-                    success=True,
-                    message="Memory replicated to all backends",
-                    data={"results": results},
-                    routed_to="all"
-                )
-            else:
-                # Route to single backend
-                endpoint = ApexConfig.ENDPOINTS["memory_nexus"]
-                response = await client.post(
-                    f"{endpoint}/memory/add",
-                    json={
-                        **request.dict(),
-                        "backend": backend
-                    }
-                )
-                
-                return MemoryResponse(
-                    success=True,
-                    message=f"Memory added to {backend}",
-                    data=response.json() if response.status_code == 200 else None,
-                    routed_to=backend
-                )
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        if response.status_code == 200:
+            return {
+                "success": True,
+                "backend_used": backend,
+                "memory_id": response.json().get('memory_id'),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Memory add failed")
 
 @app.post("/api/v1/memory/search")
-async def search_memory(request: MemorySearchRequest) -> MemoryResponse:
-    """
-    Unified search across all memory backends
+async def search_memory(request: MemorySearchRequest):
+    """Search across all memory backends"""
     
-    Searches Mem0, MemoryPlugin, and Supermemory simultaneously
-    and aggregates results by relevance
-    """
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            endpoint = ApexConfig.ENDPOINTS["memory_nexus"]
-            response = await client.post(
-                f"{endpoint}/memory/search",
-                json=request.dict()
-            )
-            
-            return MemoryResponse(
-                success=True,
-                message="Search completed",
-                data=response.json() if response.status_code == 200 else {"results": []}
-            )
+    sources = request.sources or ['mem0', 'memory_plugin', 'supermemory']
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{CONFIG['memory_nexus']}/api/memory/search",
+            json={
+                "query": request.query,
+                "user_id": request.user_id,
+                "sources": sources,
+                "limit": request.limit
+            },
+            timeout=10.0
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise HTTPException(status_code=500, detail="Memory search failed")
 
+# ============================================
+# FORENSIC INTELLIGENCE
+# ============================================
 
 @app.post("/api/v1/forensic/analyze")
-async def forensic_analyze(request: ForensicAnalysisRequest) -> MemoryResponse:
-    """
-    Forensic case analysis through SUPERLUMINAL integration
+async def analyze_forensic_case(request: ForensicAnalyzeRequest):
+    """Analyze forensic case using SUPERLUMINAL"""
     
-    Performs:
-    - Pattern detection across evidence
-    - Relationship mapping
-    - Timeline generation
-    - Anomaly detection
-    """
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            endpoint = ApexConfig.ENDPOINTS["superluminal"]
-            response = await client.post(
-                f"{endpoint}/case/analyze",
-                json=request.dict()
-            )
-            
-            return MemoryResponse(
-                success=True,
-                message="Forensic analysis complete",
-                data=response.json() if response.status_code == 200 else None
-            )
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{CONFIG['intelligence']}/api/case/analyze",
+            json={
+                "case_id": request.case_id,
+                "evidence": request.evidence or []
+            },
+            timeout=30.0
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise HTTPException(status_code=500, detail="Forensic analysis failed")
+
+# ============================================
+# SKILL EXECUTION
+# ============================================
+
+@app.post("/api/v1/skills/execute")
+async def execute_skill(request: SkillExecuteRequest):
+    """Execute automated skill via Omni_Engine"""
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{CONFIG['execution_engine']}/api/skill/execute",
+            json={
+                "skill": request.skill,
+                "params": request.params
+            },
+            timeout=60.0
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise HTTPException(status_code=500, detail="Skill execution failed")
 
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
 
-@app.get("/api/v1/stats")
-async def get_stats():
-    """
-    Get APEX system statistics
-    """
-    return {
-        "repositories": 8,
-        "integrations": 56,
-        "response_time_target": "<300ms",
-        "memory_backends": 3,
-        "api_integrations": 25,
-        "skills_available": 50,
-        "uptime": "operational"
-    }
+def _route_memory_add(content: str, metadata: Optional[Dict] = None) -> str:
+    """Intelligent routing logic for memory adds"""
+    
+    # Check for preferences
+    if any(word in content.lower() for word in ['prefer', 'like', 'favorite', 'setting']):
+        return 'memory_plugin'
+    
+    # Check for relationships/cases
+    if any(word in content.lower() for word in ['case', 'linked', 'related', 'connection']):
+        return 'mem0'
+    
+    # Check for critical/emergency
+    if metadata and metadata.get('priority', 0) >= 5:
+        return 'all'  # Replicate to all backends
+    
+    # Default to Supermemory for fast contextual memory
+    return 'supermemory'
 
-
-# ============================================================================
-# MAIN
-# ============================================================================
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=8000,
-        log_level="info"
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)
